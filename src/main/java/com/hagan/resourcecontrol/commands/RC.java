@@ -48,7 +48,7 @@ public class RC {
 		            }
 		        )
 		    ).then(Commands.literal("activate")
-		         .then(Commands.argument("packname", StringArgumentType.word())
+		         .then(Commands.argument("packname", StringArgumentType.string())
 			         .executes((player) -> {
 		                     return activatePack(player.getSource(), StringArgumentType.getString(player, "packname"), true);
 			             }
@@ -60,7 +60,7 @@ public class RC {
 			         )
 			     )
 		    ).then(Commands.literal("deactivate")
-			     .then(Commands.argument("packname", StringArgumentType.word())
+			     .then(Commands.argument("packname", StringArgumentType.string())
 			         .executes((player) -> {
 				             return deactivatePack(player.getSource(), StringArgumentType.getString(player, "packname"), true);
 					     }
@@ -72,7 +72,7 @@ public class RC {
 			         )
 				 )
 			).then(Commands.literal("moveup")
-		         .then(Commands.argument("packname", StringArgumentType.word())
+		         .then(Commands.argument("packname", StringArgumentType.string())
 		             .then(Commands.argument("amount", IntegerArgumentType.integer())
 		                 .executes((player) -> {
 		            	         return movePackUp(player.getSource(), StringArgumentType.getString(player, "packname"), IntegerArgumentType.getInteger(player, "amount"), true);
@@ -86,7 +86,7 @@ public class RC {
 		             )
 	    		 )
 	        ).then(Commands.literal("movedown")
-			     .then(Commands.argument("packname", StringArgumentType.word())
+			     .then(Commands.argument("packname", StringArgumentType.string())
 				     .then(Commands.argument("amount", IntegerArgumentType.integer())
 				         .executes((player) -> {
 				                 return movePackDown(player.getSource(), StringArgumentType.getString(player, "packname"), IntegerArgumentType.getInteger(player, "amount"), true);
@@ -146,28 +146,54 @@ public class RC {
 	    // ----- Find pack ----- //
 	    LOGGER.info("Searching for pack with id of: " + packId);
 
-	    boolean packFound = false;
+	    
+	    String foundStatus = "not_found";
 	    Pack foundPack = null;
+	    
 
 	    for (Pack pack : availablePacks) {
 	        if (pack.getId().toString().equals("file/" + packId)) {
-	            packFound = true;
+	            foundStatus = "found";
 	            foundPack = pack;
 	            break;
+	        }
+	        
+	        // This should never overtake a situation where there is both a .zip and a folder, since if theres a folder itll just break before getting here.
+	        if (pack.getId().toString().equals("file/" + packId + ".zip")) {
+	        	foundStatus = "zip";
 	        }
 	    }
 
 	    // ----- Respond to user ----- //
-	    if (packFound) {
-	        LOGGER.info("Pack found!");
-	    } else {
-	        // Removed check for Component and used packId directly
-	        commandSource.sendSuccess(() -> {
-	            return Component.literal("Pack with name of '" + packId + "' wasn't found");
-	        }, false);
-	        return null;
+	    switch (foundStatus) {
+	    
+	    	case "found":
+	    		LOGGER.info("Pack found!");
+	    		break;
+	    		
+	    	case "zip":
+	    		// Maybe they meant packId.zip
+		        commandSource.sendSuccess(() -> {
+		            return Component.literal("Pack with name of '" + packId + "' wasn't found. Did you maybe mean '"+packId+".zip' instead?");
+		        }, false);
+		        return null;
+		        
+	    	case "not_found":
+	    		// Just wasn't found
+		        commandSource.sendSuccess(() -> {
+		            return Component.literal("Pack with name of '" + packId + "' wasn't found");
+		        }, false);
+		        return null;
+		    
+		    default:
+		    	// Something very wrong happened and foundStatus is a wrong string.
+		    	commandSource.sendSuccess(() -> {
+		            return Component.literal("Something unexpected happened when trying to find the pack");
+		        }, false);
+		        return null;
 	    }
 	    
+	    // ----- Return ----- //
 	    return foundPack;
    }
    
@@ -444,5 +470,3 @@ public class RC {
 		return movePack(commandSource, packId, -amount, reload);
    }
 }
-
-
