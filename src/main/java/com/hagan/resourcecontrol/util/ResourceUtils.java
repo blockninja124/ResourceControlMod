@@ -98,7 +98,13 @@ public class ResourceUtils {
 	 * Reloads all of the resources on the client its run. Basically forcing an F3+T
 	 */
 	public static void reloadAll() {
-		Minecraft.getInstance().reloadResourcePacks();
+		Minecraft mc = Minecraft.getInstance();
+		mc.reloadResourcePacks();
+		
+		// This just prevents another reload when using the reload menu after this command has already done it
+		PackRepository rm = mc.getResourcePackRepository();
+		mc.options.resourcePacks = new ArrayList<>(rm.getSelectedIds());
+		mc.options.save();
 	}
 
 }
