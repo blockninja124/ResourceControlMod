@@ -307,7 +307,7 @@ public class RC {
         }
         
 		commandSource.sendSuccess(() -> {
-			return Component.literal("Activated pack");
+			return Component.literal("Deactivated pack");
 		}, true);
 		
 
