@@ -1,14 +1,11 @@
 package com.hagan.resourcecontrol.commands;
 
-import com.google.common.collect.ImmutableList;
 import com.hagan.resourcecontrol.util.ResourceUtils;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.logging.LogUtils;
 
 import java.util.ArrayList;
@@ -21,11 +18,6 @@ import org.slf4j.Logger;
 import net.minecraft.client.Minecraft;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
-import net.minecraft.commands.arguments.EntityArgument;
-import net.minecraft.commands.arguments.MessageArgument;
-import net.minecraft.commands.arguments.ResourceArgument;
-import net.minecraft.commands.synchronization.brigadier.StringArgumentSerializer;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackRepository;
@@ -33,9 +25,6 @@ import net.minecraft.server.packs.repository.PackRepository;
 public class RC {
 	
    private static final Logger LOGGER = LogUtils.getLogger();
-   
-   //TODO: use a translatable here
-   //private static final SimpleCommandExceptionType ERROR_EMPTY_PACKNAME = new SimpleCommandExceptionType(Component.literal("Packname not specified"));
 
    
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher_) {
@@ -174,24 +163,19 @@ public class RC {
 	Pack foundPack = null;
 
 
-	for (Pack pack : availablePacks) {
-	// For normal packs
-	if (pack.getId().equals("file/" + packId)) {
-	foundStatus = "found";
-	foundPack = pack;
-	break;
+	    for (Pack pack : availablePacks) {
+			System.out.println(pack.getId());
+	        if (pack.getId().toString().equals("file/" + packId)) {
+	            foundStatus = "found";
+	            foundPack = pack;
+	            break;
+	        }
 
-	// For built-in packs (high_contrast, etc)
-	} else if (pack.getId().equals(packId)) {
-	foundStatus = "found";
-	foundPack = pack;
-	}
-
-	// This should never overtake a situation where there is both a .zip and a folder, since if theres a folder itll just break before getting here.
-	if (pack.getId().toString().equals("file/" + packId + ".zip")) {
-	foundStatus = "zip";
-	}
-	}
+	        // This should never overtake a situation where there is both a .zip and a folder, since if theres a folder itll just break before getting here.
+	        if (pack.getId().toString().equals("file/" + packId + ".zip")) {
+	        	foundStatus = "zip";
+	        }
+	    }
 
 	// ----- Respond to user ----- //
 	switch (foundStatus) {

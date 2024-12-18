@@ -12,6 +12,8 @@ import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 public class ResourceUtils {
 
@@ -94,10 +96,11 @@ public class ResourceUtils {
 //            System.out.println("Model not found: " + modelLocation);
 //        }
 	}
-	
+
 	/**
 	 * Reloads all of the resources on the client its run. Basically forcing an F3+T
 	 */
+	@OnlyIn(Dist.CLIENT)
 	public static void reloadAll() {
 		Minecraft mc = Minecraft.getInstance();
 		mc.reloadResourcePacks();
