@@ -1,6 +1,7 @@
 package com.hagan.resourcecontrol.util;
 
 import java.io.File;
+import java.util.ArrayList;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
@@ -93,7 +94,6 @@ public class ResourceUtils {
 //            System.out.println("Model not found: " + modelLocation);
 //        }
 	}
-	
 	
 	/**
 	 * Reloads all of the resources on the client its run. Basically forcing an F3+T
