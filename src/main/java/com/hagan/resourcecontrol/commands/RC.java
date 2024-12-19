@@ -1,5 +1,8 @@
 package com.hagan.resourcecontrol.commands;
 
+import com.hagan.resourcecontrol.network.ActivatePackPacket;
+import com.hagan.resourcecontrol.network.NetworkHandler;
+import com.hagan.resourcecontrol.network.ReloadAllPacket;
 import com.hagan.resourcecontrol.util.ResourceUtils;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -13,6 +16,7 @@ import java.util.Collection;
 
 import javax.annotation.Nullable;
 
+import net.minecraftforge.network.PacketDistributor;
 import org.slf4j.Logger;
 
 import net.minecraft.client.Minecraft;
@@ -24,79 +28,90 @@ import net.minecraft.server.packs.repository.PackRepository;
 
 public class RC {
 	
-   private static final Logger LOGGER = LogUtils.getLogger();
-
+	private static final Logger LOGGER = LogUtils.getLogger();
    
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher_) {
-	    dispatcher_.register(Commands.literal("rc").requires((player) -> {
-                    return true;
-	   	        }
-            ).then(Commands.literal("listpacks")
+	    dispatcher_.register(Commands.literal("rc")
+			.then(Commands.literal("listpacks")
 				.executes((player) -> {
 						return getPacks(player.getSource());
 					}
 				)
 			).then(Commands.literal("reloadall")
-		        .executes((player) -> {
-		                return reloadAll(player.getSource());
-		            }
-		        )
-		    ).then(Commands.literal("activate")
-		         .then(Commands.argument("packname", StringArgumentType.string())
-			         .executes((player) -> {
-		                     return activatePack(player.getSource(), StringArgumentType.getString(player, "packname"), true);
-			             }
-			         ).then(Commands.argument("reload", BoolArgumentType.bool())
-			               .executes((player) -> {
-			            	       return activatePack(player.getSource(), StringArgumentType.getString(player, "packname"), BoolArgumentType.getBool(player, "reload"));
-			                   }
-			               )
-			         )
-			     )
-		    ).then(Commands.literal("deactivate")
-			     .then(Commands.argument("packname", StringArgumentType.string())
-			         .executes((player) -> {
-				             return deactivatePack(player.getSource(), StringArgumentType.getString(player, "packname"), true);
-					     }
+				.executes((player) -> {
+						return reloadAll(player.getSource());
+					}
+				)
+			).then(Commands.literal("activate")
+				 .then(Commands.argument("packname", StringArgumentType.string())
+					 .executes((player) -> {
+							 return sendPacketToSource(player.getSource(), new ActivatePackPacket(StringArgumentType.getString(player, "packname"), true));
+						 }
 					 ).then(Commands.argument("reload", BoolArgumentType.bool())
-			               .executes((player) -> {
-			            	       return deactivatePack(player.getSource(), StringArgumentType.getString(player, "packname"), BoolArgumentType.getBool(player, "reload"));
-			                   }
-			               )
-			         )
+						   .executes((player) -> {
+							   return sendPacketToSource(player.getSource(), new ActivatePackPacket(StringArgumentType.getString(player, "packname"), BoolArgumentType.getBool(player, "reload")));
+							   }
+						   )
+					 )
+				 )
+			).then(Commands.literal("deactivate")
+				 .then(Commands.argument("packname", StringArgumentType.string())
+					 .executes((player) -> {
+							 return deactivatePack(player.getSource(), StringArgumentType.getString(player, "packname"), true);
+						 }
+					 ).then(Commands.argument("reload", BoolArgumentType.bool())
+						   .executes((player) -> {
+								   return deactivatePack(player.getSource(), StringArgumentType.getString(player, "packname"), BoolArgumentType.getBool(player, "reload"));
+							   }
+						   )
+					 )
 				 )
 			).then(Commands.literal("moveup")
-		         .then(Commands.argument("packname", StringArgumentType.string())
-		             .then(Commands.argument("amount", IntegerArgumentType.integer())
-		                 .executes((player) -> {
-		            	         return movePackUp(player.getSource(), StringArgumentType.getString(player, "packname"), IntegerArgumentType.getInteger(player, "amount"), true);
-		                     }
-		                 ).then(Commands.argument("reload", BoolArgumentType.bool())
-					               .executes((player) -> {
-				            	       return movePackUp(player.getSource(), StringArgumentType.getString(player, "packname"), IntegerArgumentType.getInteger(player, "amount"), BoolArgumentType.getBool(player, "reload"));
-				                   }
-				               )
-				         )
-		             )
-	    		 )
-	        ).then(Commands.literal("movedown")
-			     .then(Commands.argument("packname", StringArgumentType.string())
-				     .then(Commands.argument("amount", IntegerArgumentType.integer())
-				         .executes((player) -> {
-				                 return movePackDown(player.getSource(), StringArgumentType.getString(player, "packname"), IntegerArgumentType.getInteger(player, "amount"), true);
-				             }
-				         ).then(Commands.argument("reload", BoolArgumentType.bool())
-					               .executes((player) -> {
-				            	       return movePackDown(player.getSource(), StringArgumentType.getString(player, "packname"), IntegerArgumentType.getInteger(player, "amount"), BoolArgumentType.getBool(player, "reload"));
-				                   }
-				               )
-				         )
-				     )
-			     )
-		    )
-        );
+				 .then(Commands.argument("packname", StringArgumentType.string())
+					 .then(Commands.argument("amount", IntegerArgumentType.integer())
+						 .executes((player) -> {
+								 return movePackUp(player.getSource(), StringArgumentType.getString(player, "packname"), IntegerArgumentType.getInteger(player, "amount"), true);
+							 }
+						 ).then(Commands.argument("reload", BoolArgumentType.bool())
+								   .executes((player) -> {
+									   return movePackUp(player.getSource(), StringArgumentType.getString(player, "packname"), IntegerArgumentType.getInteger(player, "amount"), BoolArgumentType.getBool(player, "reload"));
+								   }
+							   )
+						 )
+					 )
+				 )
+			).then(Commands.literal("movedown")
+				 .then(Commands.argument("packname", StringArgumentType.string())
+					 .then(Commands.argument("amount", IntegerArgumentType.integer())
+						 .executes((player) -> {
+								 return movePackDown(player.getSource(), StringArgumentType.getString(player, "packname"), IntegerArgumentType.getInteger(player, "amount"), true);
+							 }
+						 ).then(Commands.argument("reload", BoolArgumentType.bool())
+								   .executes((player) -> {
+									   return movePackDown(player.getSource(), StringArgumentType.getString(player, "packname"), IntegerArgumentType.getInteger(player, "amount"), BoolArgumentType.getBool(player, "reload"));
+								   }
+							   )
+						 )
+					 )
+				 )
+			)
+		);
 	
-  };
+  	};
+
+	private static int sendPacketToSource(CommandSourceStack commandSource, Object packet) {
+		try {
+			NetworkHandler.INSTANCE.send(
+					PacketDistributor.PLAYER.with(
+							commandSource::getPlayer
+					), packet
+			);
+			return 1;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return 0;
+		}
+	}
    
 	/**
 	* Reloads the entire resources of the client this is called on. Meant for use in commands with a {@link net.minecraft.commands.CommandSourceStack CommandSourceStack}.
@@ -106,43 +121,58 @@ public class RC {
 	*/
 	private static int reloadAll(CommandSourceStack commandSource) {
 
-	try {
-	ResourceUtils.reloadAll();
+		try {
+			NetworkHandler.INSTANCE.send(
+					PacketDistributor.PLAYER.with(
+							()->commandSource.getPlayer()
+					), new ReloadAllPacket()
+			);
 
-	commandSource.sendSuccess(() -> {
-	return Component.literal("Reloaded textures of player");
-	}, true);
+			commandSource.sendSuccess(() -> {
+				return Component.literal("Reloaded textures of player");
+			}, true);
 
-	return 1;
-	} catch (Exception e) {
-	e.printStackTrace();
-	commandSource.sendSuccess(() -> {
-	return Component.literal("Command failed with error: " + e.toString() + ". See log for more info");
-	}, false);
-	return 0;
-	}
+			return 1;
+		} catch (Exception e) {
+			e.printStackTrace();
+			commandSource.sendSuccess(() -> {
+				return Component.literal("Command failed with error: " + e.toString() + ". See log for more info");
+			}, false);
+			return 0;
+		}
 	}
 
 	private static int getPacks(CommandSourceStack commandSource) {
-	Minecraft mc = Minecraft.getInstance();
-	PackRepository packRepository = mc.getResourcePackRepository();
-	Collection<Pack> availablePacks = packRepository.getAvailablePacks();
 
-	StringBuilder packsString = new StringBuilder();
 
-	for (Pack pack : availablePacks) {
-	packsString.append(pack.getId());
-	packsString.append(", ");
+		Minecraft mc = Minecraft.getInstance();
+		PackRepository packRepository = mc.getResourcePackRepository();
+		Collection<Pack> availablePacks = packRepository.getAvailablePacks();
+
+		// Never going to happen because of built-in packs... hmm
+		if (availablePacks.isEmpty()) {
+			commandSource.sendSuccess(() -> {
+				return Component.literal("No packs found");
+			}, false);
+			return 0;
+		}
+
+		StringBuilder packsString = new StringBuilder();
+
+		for (Pack pack : availablePacks) {
+			packsString.append(pack.getId());
+			packsString.append(", ");
+		}
+
+		commandSource.sendSuccess(() -> {
+			return Component.literal("Found packs: " + packsString);
+		}, true);
+		return 1;
 	}
-
-	commandSource.sendSuccess(() -> {
-	return Component.literal("Found packs: " + packsString);
-	}, true);
-	return 1;   }
 
 	/**
 	* Uses a {@link net.minecraft.commands.CommandSourceStack CommandSourceStack} to try and find an available
-	* pack with an id of {@link packId}, using the packRepository. Logs if pack is found
+	* pack with an id of {@code packId}, using the packRepository. Logs if pack is found
 	* in console and in the source stack {@link net.minecraft.commands.CommandSourceStack#sendSuccess CommandSourceStack#sendSuccess}
 	* @param commandSource
 	* @param packId the pack id as a string
@@ -151,129 +181,129 @@ public class RC {
 	*/
 	private static Pack findPack(CommandSourceStack commandSource, String packId, PackRepository packRepository) {
 
-	// ----- Get packs ----- //
-	Collection<Pack> availablePacks = packRepository.getAvailablePacks();
+		// ----- Get packs ----- //
+		Collection<Pack> availablePacks = packRepository.getAvailablePacks();
 
 
-	// ----- Find pack ----- //
-	LOGGER.info("Searching for pack with id of: " + packId);
+		// ----- Find pack ----- //
+		LOGGER.info("Searching for pack with id of: " + packId);
 
 
-	String foundStatus = "not_found";
-	Pack foundPack = null;
+		String foundStatus = "not_found";
+		Pack foundPack = null;
 
 
-	    for (Pack pack : availablePacks) {
-			System.out.println(pack.getId());
-	        if (pack.getId().toString().equals("file/" + packId)) {
-	            foundStatus = "found";
-	            foundPack = pack;
-	            break;
-	        }
+			for (Pack pack : availablePacks) {
+				System.out.println(pack.getId());
+				if (pack.getId().toString().equals("file/" + packId)) {
+					foundStatus = "found";
+					foundPack = pack;
+					break;
+				}
 
-	        // This should never overtake a situation where there is both a .zip and a folder, since if theres a folder itll just break before getting here.
-	        if (pack.getId().toString().equals("file/" + packId + ".zip")) {
-	        	foundStatus = "zip";
-	        }
-	    }
+				// This should never overtake a situation where there is both a .zip and a folder, since if theres a folder itll just break before getting here.
+				if (pack.getId().toString().equals("file/" + packId + ".zip")) {
+					foundStatus = "zip";
+				}
+			}
 
-	// ----- Respond to user ----- //
-	switch (foundStatus) {
+		// ----- Respond to user ----- //
+		switch (foundStatus) {
 
-	case "found":
-	LOGGER.info("Pack found!");
-	break;
+			case "found":
+				LOGGER.info("Pack found!");
+				break;
 
-	case "zip":
-	// Maybe they meant packId.zip
-	commandSource.sendSuccess(() -> {
-	return Component.literal("Pack with name of '" + packId + "' wasn't found. Did you maybe mean '"+packId+".zip' instead?");
-	}, false);
-	return null;
+			case "zip":
+				// Maybe they meant packId.zip
+				commandSource.sendSuccess(() -> {
+					return Component.literal("Pack with name of '" + packId + "' wasn't found. Did you maybe mean '"+packId+".zip' instead?");
+				}, false);
+				return null;
 
-	case "not_found":
-	// Just wasn't found
-	commandSource.sendSuccess(() -> {
-	return Component.literal("Pack with name of '" + packId + "' wasn't found");
-	}, false);
-	return null;
+			case "not_found":
+				// Just wasn't found
+				commandSource.sendSuccess(() -> {
+					return Component.literal("Pack with name of '" + packId + "' wasn't found");
+				}, false);
+			return null;
 
-	default:
-	// Something very wrong happened and foundStatus is a wrong string.
-	commandSource.sendSuccess(() -> {
-	return Component.literal("Something unexpected happened when trying to find the pack");
-	}, false);
-	return null;
-	}
+			default:
+				// Something very wrong happened and foundStatus is a wrong string.
+				commandSource.sendSuccess(() -> {
+					return Component.literal("Something unexpected happened when trying to find the pack");
+				}, false);
+				return null;
+		}
 
-	// ----- Return ----- //
-	return foundPack;
+		// ----- Return ----- //
+		return foundPack;
 	}
 
 	private static int activatePack(CommandSourceStack commandSource, @Nullable String packId, boolean reload) {
 
-	try {
+		try {
 
-	Minecraft mc = Minecraft.getInstance();
-	PackRepository packRepository = mc.getResourcePackRepository(); // Access to available packs
+			Minecraft mc = Minecraft.getInstance();
+			PackRepository packRepository = mc.getResourcePackRepository(); // Access to available packs
 
-	Pack foundPack = findPack(commandSource, packId, packRepository);
+			Pack foundPack = findPack(commandSource, packId, packRepository);
 
-	// We already told the user what happened in findPack so just return failed here
-	if (foundPack == null) {
-	return 0;
-	}
-
-
-	// ----- Activate pack ----- //
-
-	Collection<String> selectedPacks = packRepository.getSelectedIds();
-
-	// Activate the new pack (if not already active)
-	if (selectedPacks.contains(foundPack.getId())) {
-	commandSource.sendSuccess(() -> {
-	return Component.literal("Pack is already selected");
-	}, false);
-	return 0;
-	}
-
-	// Make a copy of selected ids list, so that we can change it
-	Collection<String> mutableSelectedPacks = new ArrayList<>(selectedPacks);
-
-	// Add our pack id
-	mutableSelectedPacks.add("file/" + packId);
-
-	//TODO: Terrible TERRIBLE fix to built-in packs. PLEASE fix me later.
-	mutableSelectedPacks.add(packId);
+			// We already told the user what happened in findPack so just return failed here
+			if (foundPack == null) {
+				return 0;
+			}
 
 
-	// Set the selected packs to our new list with our pack added
-	packRepository.setSelected(mutableSelectedPacks);
+			// ----- Activate pack ----- //
 
-	packRepository.getAvailablePacks();
+			Collection<String> selectedPacks = packRepository.getSelectedIds();
+
+			// Activate the new pack (if not already active)
+			if (selectedPacks.contains(foundPack.getId())) {
+				commandSource.sendSuccess(() -> {
+					return Component.literal("Pack is already selected");
+				}, false);
+				return 0;
+			}
+
+			// Make a copy of selected ids list, so that we can change it
+			Collection<String> mutableSelectedPacks = new ArrayList<>(selectedPacks);
+
+			// Add our pack id
+			mutableSelectedPacks.add("file/" + packId);
+
+			//TODO: Terrible TERRIBLE fix to built-in packs. PLEASE fix me later.
+			mutableSelectedPacks.add(packId);
 
 
-	// ----- Reload resources ----- //
+			// Set the selected packs to our new list with our pack added
+			packRepository.setSelected(mutableSelectedPacks);
 
-	if (reload) {
-	// Reload the players resources. If not done, all sorts of weirdness happens.
-	ResourceUtils.reloadAll();
-	}
+			packRepository.getAvailablePacks();
 
-	commandSource.sendSuccess(() -> {
-	return Component.literal("Activated pack");
-	}, true);
 
-	return 1;
+			// ----- Reload resources ----- //
 
-	// ----- Error handling ----- //
-	} catch (Exception e) {
-	e.printStackTrace();
-	commandSource.sendSuccess(() -> {
-	return Component.literal("Command failed with error: " + e.toString() + ". See log for more info");
-	}, false);
-	return 0;
-	}
+			if (reload) {
+				// Reload the players resources. If not done, all sorts of weirdness happens.
+				ResourceUtils.reloadAll();
+			}
+
+			commandSource.sendSuccess(() -> {
+				return Component.literal("Activated pack");
+			}, true);
+
+			return 1;
+
+		// ----- Error handling ----- //
+		} catch (Exception e) {
+			e.printStackTrace();
+			commandSource.sendSuccess(() -> {
+				return Component.literal("Command failed with error: " + e.toString() + ". See log for more info");
+			}, false);
+			return 0;
+		}
 
 	}
 

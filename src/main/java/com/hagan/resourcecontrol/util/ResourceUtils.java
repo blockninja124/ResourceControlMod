@@ -2,20 +2,31 @@ package com.hagan.resourcecontrol.util;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 
+import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.SimpleTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelManager;
+import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.slf4j.Logger;
+
+import javax.annotation.Nullable;
 
 public class ResourceUtils {
+
+	private static final Logger LOGGER = LogUtils.getLogger();
+
 
 	public static void reloadSingleTexture(String resourcePath) {
 		
@@ -110,5 +121,63 @@ public class ResourceUtils {
 		mc.options.resourcePacks = new ArrayList<>(rm.getSelectedIds());
 		mc.options.save();
 	}
+
+	/**
+	 * Tries to find a pack with an id of {@code packId}, using the packRepository of the current client.
+	 * @param packId the pack id as a string
+	 * @return Returns the Pack object if the pack was found, or null if not
+	 */
+	@OnlyIn(Dist.CLIENT)
+	public static Pack findPack(String packId) {
+
+		// ----- Get packs ----- //
+		Minecraft mc = Minecraft.getInstance();
+		PackRepository packRepository = mc.getResourcePackRepository();
+		Collection<Pack> availablePacks = packRepository.getAvailablePacks();
+
+
+		// ----- Find pack ----- //
+		LOGGER.info("Searching for pack with id of: " + packId);
+
+		Pack foundPack = null;
+
+		for (Pack pack : availablePacks) {
+			if (pack.getId().toString().equals("file/" + packId)) {
+				foundPack = pack;
+				break;
+			}
+
+		}
+
+		// ----- Return ----- //
+		return foundPack;
+	}
+
+	@OnlyIn(Dist.CLIENT)
+	public static boolean activatePack(Pack pack) {
+
+		Minecraft mc = Minecraft.getInstance();
+		PackRepository packRepository = mc.getResourcePackRepository(); // Access to available packs
+
+		Collection<String> selectedPacks = packRepository.getSelectedIds();
+
+		// Make sure its not already active
+		if (selectedPacks.contains(pack.getId())) {
+			return false;
+		}
+
+		// Make a copy of selected ids list, so that we can change it
+		Collection<String> mutableSelectedPacks = new ArrayList<>(selectedPacks);
+
+		// Add our pack id
+		mutableSelectedPacks.add("file/" + pack.getId());
+
+		// Set the selected packs to our new list with our pack added
+		packRepository.setSelected(mutableSelectedPacks);
+
+		packRepository.getAvailablePacks();
+
+		return true;
+	};
 
 }

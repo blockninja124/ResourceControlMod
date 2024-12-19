@@ -46,14 +46,13 @@ public class ResourceControl
     {
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
+        MinecraftForge.EVENT_BUS.register(CommandRegister.class);
+
         // Register the commonSetup method for modloading
         modEventBus.addListener(this::commonSetup);
 
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);
-        
-        MinecraftForge.EVENT_BUS.register(CommandRegister.class);
-        
 
         // Register the item to a creative tab
         //modEventBus.addListener(this::addCreative);
@@ -65,7 +64,7 @@ public class ResourceControl
     private void commonSetup(final FMLCommonSetupEvent event)
     {
     	//register our packets
-    	//NetworkHandler.registerPackets();
+    	NetworkHandler.registerPackets();
     	
         // Some common setup code
         //LOGGER.info("HELLO FROM COMMON SETUP");

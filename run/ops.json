@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "uuid": "4431b0a7-7026-3e8e-a7f3-d2b4bbac05c2",
+    "name": "dev2",
+    "level": 4,
+    "bypassesPlayerLimit": false
+  },
+  {
+    "uuid": "7e0d377b-8608-39e3-a080-13180dd3f432",
+    "name": "dev1",
+    "level": 4,
+    "bypassesPlayerLimit": false
+  }
+]
