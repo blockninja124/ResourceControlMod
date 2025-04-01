@@ -1,3 +1,6 @@
+## This mod has been migrated to a multi-loader setup, and this repo archived. View the new source [here](https://github.com/blockninja124/Resource-Control)
+
+
 # ResourceControlMod
 
 The source code for the Minecraft mod Resource Control
