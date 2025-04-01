@@ -1,7 +1,7 @@
-package com.hagan.resourcecontrol;
+package com.blockninja.resourcecontrol;
 
-import com.hagan.resourcecontrol.commands.CommandRegister;
-import com.hagan.resourcecontrol.network.NetworkHandler;
+import com.blockninja.resourcecontrol.commands.CommandRegister;
+import com.blockninja.resourcecontrol.network.NetworkHandler;
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;

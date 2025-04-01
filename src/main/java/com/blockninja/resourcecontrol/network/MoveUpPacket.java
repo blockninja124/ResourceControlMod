@@ -1,9 +1,7 @@
-package com.hagan.resourcecontrol.network;
+package com.blockninja.resourcecontrol.network;
 
-import com.hagan.resourcecontrol.util.ResourceUtils;
+import com.blockninja.resourcecontrol.util.ResourceUtils;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.packs.repository.Pack;
-import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraftforge.network.NetworkEvent;
 
 public class MoveUpPacket extends RCPacket {

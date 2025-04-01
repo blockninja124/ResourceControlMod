@@ -1,9 +1,7 @@
-package com.hagan.resourcecontrol.network;
+package com.blockninja.resourcecontrol.network;
 
-import com.hagan.resourcecontrol.util.ResourceUtils;
-import net.minecraft.commands.CommandSourceStack;
+import com.blockninja.resourcecontrol.util.ResourceUtils;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.Component;
 import net.minecraftforge.network.NetworkEvent;
 
 public class ReloadAllPacket extends RCPacket {

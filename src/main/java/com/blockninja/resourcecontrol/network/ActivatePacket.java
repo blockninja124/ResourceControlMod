@@ -1,6 +1,6 @@
-package com.hagan.resourcecontrol.network;
+package com.blockninja.resourcecontrol.network;
 
-import com.hagan.resourcecontrol.util.ResourceUtils;
+import com.blockninja.resourcecontrol.util.ResourceUtils;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.network.NetworkEvent;
 

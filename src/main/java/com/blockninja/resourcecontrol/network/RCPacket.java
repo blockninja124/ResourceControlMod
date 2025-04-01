@@ -1,4 +1,4 @@
-package com.hagan.resourcecontrol.network;
+package com.blockninja.resourcecontrol.network;
 
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
