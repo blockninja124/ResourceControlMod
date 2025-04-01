@@ -4,6 +4,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import com.hagan.resourcecontrol.ResourceControl;
+import com.hagan.resourcecontrol.network.LogToServerPacket;
 import com.hagan.resourcecontrol.network.NetworkHandler;
 import com.mojang.logging.LogUtils;
 import net.minecraft.client.Minecraft;
@@ -20,17 +22,39 @@ import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.slf4j.Logger;
-
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import javax.annotation.Nullable;
 
 public class ResourceUtils {
-	private static final Logger LOGGER = LogUtils.getLogger();
+	private static final Logger LOGGER = LogManager.getLogger(ResourceControl.MODID);
 
 	@OnlyIn(Dist.CLIENT)
 	public static PackRepository getPackRepo() {
 		Minecraft mc = Minecraft.getInstance();
 		return mc.getResourcePackRepository();
+	}
+
+	private static void log(String message, int level) {
+		// Log in server console
+		NetworkHandler.INSTANCE.sendToServer(new LogToServerPacket(message, level));
+
+		// Log in this clients console
+		switch (level) {
+			case 0:
+				LOGGER.info(message);
+				break;
+			case 1:
+				LOGGER.warn(message);
+				break;
+			case 2:
+				LOGGER.error(message);
+				break;
+			default:
+				LOGGER.info(message);
+				LOGGER.warn("log was given an invalid log level. Expected between 0-2, was given {}", level);
+				break;
+		}
 	}
 
 	/**
@@ -66,7 +90,7 @@ public class ResourceUtils {
 
 		Collection<Pack> availablePacks = packRepository.getAvailablePacks();
 
-		LOGGER.info("Searching for pack with id of: " + packId);
+		log("Searching for pack with id of: " + packId, 0);
 
 
 		String foundStatus = "not_found";
@@ -89,22 +113,22 @@ public class ResourceUtils {
 		switch (foundStatus) {
 
 			case "found":
-				LOGGER.info("Pack found!");
+				log("Pack found!", 0);
 				break;
 
 			case "zip":
 				// Maybe they meant packId.zip
-                LOGGER.warn("Pack with name of '{}' wasn't found. Did you maybe mean '{}.zip' instead?", packId, packId);
+				log("Pack with name of '"+ packId + "' wasn't found. Did you maybe mean '"+packId+".zip' instead?", 1);
 				return null;
 
 			case "not_found":
 				// Just wasn't found
-                LOGGER.warn("Pack with name of '{}' wasn't found", packId);
+				log("Pack with name of '"+packId+"' wasn't found", 1);
 				return null;
 
 			default:
 				// Something very strange happened
-				LOGGER.error("Something unexpected happened when trying to find the pack");
+				log("Something unexpected happened when trying to find the pack", 2);
 				return null;
 		}
 
@@ -115,16 +139,16 @@ public class ResourceUtils {
 	public static void logPacks(PackRepository packRepository) {
 		String username = Minecraft.getInstance().player.getName().getString();
 
-		LOGGER.info("Listing packs for player {}", username);
-		LOGGER.info("Packs found:");
+		log("Listing packs for player "+username, 0);
+		log("Packs found:", 0);
 
 		Collection<Pack> availablePacks = packRepository.getAvailablePacks();
 
 		for (Pack pack : availablePacks) {
-			LOGGER.info(pack.getId());
+			log(pack.getId(), 0);
 		}
 
-		LOGGER.info("No other packs found!");
+		log("No other packs found.", 0);
 	}
 
 	public static int activatePack(String packId, boolean reload) {
@@ -144,7 +168,7 @@ public class ResourceUtils {
 
 			// Already active
 			if (selectedPacks.contains(foundPack.getId())) {
-				LOGGER.warn("Pack is already selected");
+				log("Pack is already selected", 1);
 				return 0;
 			}
 
@@ -167,12 +191,12 @@ public class ResourceUtils {
 				setNoReloadNeeded();
 			}
 
-			LOGGER.info("Activated pack!");
+			log("Activated pack!", 0);
 
 			return 1;
 
 		} catch (Exception e) {
-            LOGGER.error("Command failed with error: {}. See below for more info", e.toString());
+			log("Command failed with error: "+e.toString()+". See below for more info", 2);
 			e.printStackTrace();
 			return 0;
 		}
@@ -196,7 +220,7 @@ public class ResourceUtils {
 
 			// Already de-activated
 			if (!selectedPacks.contains(foundPack.getId())) {
-				LOGGER.warn("Pack is already disabled");
+				log("Pack is already disabled", 1);
 				return 0;
 			}
 
@@ -219,12 +243,12 @@ public class ResourceUtils {
 				setNoReloadNeeded();
 			}
 
-			LOGGER.info("Deactivated pack!");
+			log("Deactivated pack!", 0);
 
 			return 1;
 
 		} catch (Exception e) {
-            LOGGER.error("Command failed with error: {}. See below for more info", e.toString());
+			log("Command failed with error: "+e.toString()+". See below for more info", 2);
 			e.printStackTrace();
 			return 0;
 		}
@@ -254,7 +278,7 @@ public class ResourceUtils {
 
 			// Make sure pack is enabled
 			if (!selectedPacks.contains(foundPack.getId())) {
-				LOGGER.error("Pack isn't enabled");
+				log("Pack isn't enabled", 1);
 				return 0;
 			}
 
@@ -279,7 +303,6 @@ public class ResourceUtils {
 
 			ArrayList<String> array = new ArrayList<>(selectedPacks);
 
-			LOGGER.info("Current packs: " + selectedPacks);
 
 			int oldIndex = array.indexOf(foundPack.getId());
 			int newIndex = oldIndex + amount;
@@ -293,7 +316,6 @@ public class ResourceUtils {
 
 			array.add(newIndex, foundPack.getId());
 
-			LOGGER.info("New packs: " + array);
 
 			//mutableSelectedPacks.
 			// Remove our pack id
@@ -313,12 +335,12 @@ public class ResourceUtils {
 				setNoReloadNeeded();
 			}
 
-			LOGGER.info("Moved pack!");
+			log("Moved pack!", 0);
 
 			return 1;
 
 		} catch (Exception e) {
-            LOGGER.error("Command failed with error: {}. See below for more info", e.toString());
+			log("Command failed with error: "+e.toString()+". See below for more info", 2);
 			e.printStackTrace();
 			return 0;
 		}

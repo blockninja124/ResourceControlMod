@@ -60,6 +60,13 @@ public class NetworkHandler {
                 LogPacksPacket::decode,
                 LogPacksPacket::handle
         );
+
+        INSTANCE.registerMessage(id++,
+                LogToServerPacket.class,
+                LogToServerPacket::encode,
+                LogToServerPacket::decode,
+                LogToServerPacket::handle
+        );
     }
 
     public static <T extends RCPacket> void sendRCPacket(ServerPlayer to, T packet) {
